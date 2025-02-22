@@ -1,17 +1,161 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Mario Game</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Game Tebak-Tebakan dengan Efek Gravitasi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            transition: background-color 0.5s;
+        }
+        h1 {
+            color: #333;
+            transition: transform 0.1s;
+        }
+        .question {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 300px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .answer {
+            display: none;
+            margin-top: 10px;
+            font-weight: bold;
+            color: green;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .flash {
+            animation: flash 0.5s;
+        }
+        @keyframes flash {
+            0% { background-color: #f4f4f4; }
+            50% { background-color: #ffcccc; }
+            100% { background-color: #f4f4f4; }
+        }
+    </style>
 </head>
 <body>
-    <h2>Simple Mario Game</h2>
-    <div class="game-container">
-        <div class="actor" id="mario"></div>
-        <div class="coin" id="coin"></div>
+
+    <h1 id="gravityText">Game Tebak-Tebakan</h1>
+    <div id="scoreContainer">
+        <p>Poin: <span id="score">0</span></p>
+        <p>Nyawa: <span id="lives"></span></p>
     </div>
-    <script src="script.js"></script>
+
+    <div class="question" id="questionContainer">
+        <p id="questionText">Siapakah Big L?</p>
+        <input type="text" id="userAnswer" placeholder="Jawaban Anda">
+        <button onclick="checkAnswer()">Kirim Jawaban</button>
+        <div id="feedback" class="answer"></div>
+    </div>
+
+    <button onclick="nextQuestion()" style="display: none;" id="nextButton">Pertanyaan Selanjutnya</button>
+
+    <script>
+        const questions = [
+            { question: "Siapakah Big L?", answer: "Lutfi" },
+            { question: "Dimana Lutfi tinggal?", answer: "Martapura" },
+            { question: "Apa warna favorit Lutfi?", answer: "Hijau" },
+            { question: "Apa hobi Lutfi?", answer: "Bermain game" }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let lives = 3;
+
+        function updateLivesDisplay() {
+            const livesContainer = document.getElementById("lives");
+            livesContainer.innerHTML = "❤️".repeat(lives); // Menggunakan emoji hati
+        }
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById("userAnswer").value;
+            const feedback = document.getElementById("feedback");
+            const currentQuestion = questions[currentQuestionIndex];
+
+            if (userAnswer.toLowerCase() === currentQuestion.answer.toLowerCase()) {
+                score++;
+                feedback.textContent = "Jawaban Benar!";
+                feedback.style.color = "green";
+                document.getElementById("score").textContent = score;
+            } else {
+                lives--;
+                feedback.textContent = "Jawaban Salah! Coba lagi.";
+                feedback.style.color = "red";
+                document.body.classList.add("flash");
+                setTimeout(() => {
+                    document.body.classList.remove("flash");
+                }, 500);
+                updateLivesDisplay(); // Update tampilan nyawa
+
+                if (lives <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+
+            feedback.style.display = "block";
+            document.getElementById("nextButton").style.display = "block";
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion ();
+            } else {
+                endGame();
+            }
+        }
+
+        function loadQuestion() {
+            document.getElementById("userAnswer").value = "";
+            document.getElementById("feedback").style.display = "none";
+            document.getElementById("nextButton").style.display = "none";
+            document.getElementById("questionText").textContent = questions[currentQuestionIndex].question;
+        }
+
+        function endGame() {
+            alert("Permainan Selesai! Skor Anda: " + score);
+            resetGame();
+        }
+
+        function resetGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            lives = 3;
+            document.getElementById("score").textContent = score;
+            updateLivesDisplay(); // Update tampilan nyawa saat reset
+            loadQuestion();
+        }
+
+        window.addEventListener("deviceorientation", function(event) {
+            const gamma = event.gamma; // Sudut rotasi di sekitar sumbu Y
+            const gravityText = document.getElementById("gravityText");
+            gravityText.style.transform = `rotate(${gamma}deg)`;
+        });
+
+        // Inisialisasi tampilan nyawa saat halaman dimuat
+        updateLivesDisplay();
+    </script>
+
 </body>
-</html>
+            </html>
