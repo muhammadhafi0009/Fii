@@ -3,12 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Dino</title>
+    <title>Game Berburu Sagu</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            color: #fff;
+            background: linear-gradient(45deg, #ff0000, #ff9900);
+            border: 5px solid #ffcc00;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.5);
+            animation: flicker 1.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
         }
         #game {
             position: relative;
@@ -22,88 +46,250 @@
             bottom: 0;
             left: 50px;
             width: 50px; 
-            height: auto; /* 
+            height: auto; 
         }
         .cactus {
             position: absolute;
             bottom: 0;
-            width: 40px; /
-            height: auto; /
+            width: 40px; 
+            height: auto; 
+        }
+        #score {
+            font-size: 20px;
+            margin: 10px;
+        }
+        #lives {
+            font-size: 20px;
+            margin: 10px;
+        }
+        #nameInput {
+            margin: 10px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s, fadeOut 0.5s 2s forwards;
+            z-index: 1000;
+            font-family: 'Arial', sans-serif;
+            font-size: 18px;
+            text-align: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        /* Pop-up styles */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            display: none;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-<div id="game">
-    <img id="dino" src="mouse.png" alt="Dino"> 
-</div>
+    <div id="welcome">
+        <h2>Selamat Datang di Game Berburu Sagu</h2>
+        <p>Apakah Anda siap bermain?</p>
+        <button id="okButton">OK</button>
+        <p>Misi Anda adalah mencapai skor  200. Jika tidak, Lutfi akan menghantui Anda saat di kamar mandi!</p>
+        <button id="readyButton">Siap</button>
+    </div>
 
-<script>
-    const dino = document.getElementById('dino');
-    const game = document.getElementById('game');
-    let isJumping = false;
+    <input type="text" id="nameInput" placeholder="Masukkan nama Anda" style="display: none;" />
+    <button id="startButton" style="display: none;">Mulai Permainan</button>
+    <div id="score" style="display: none;">Skor: 0</div>
+    <div id="lives" style="display: none;">Nyawa: ❤️❤️❤️</div>
+    <div id="game" style="display: none;">
+        <img id="dino" src="mouse.png" alt="Dino"> 
+    </div>
+    <div id="message" class="message"></div>
+    <div id="popup" class="popup">
+        <p id="popupMessage"></p>
+        <button id="closePopupButton">Tutup</button>
+    </div>
 
-    function jump() {
-        if (isJumping) return;
-        isJumping = true;
-        let jumpHeight = 0;
+    <script>
+        const dino = document.getElementById('dino');
+        const game = document.getElementById('game');
+        const scoreDisplay = document.getElementById('score');
+        const livesDisplay = document.getElementById('lives');
+        const nameInput = document.getElementById('nameInput');
+        const startButton = document.getElementById('startButton');
+        const welcome = document.getElementById('welcome');
+        const okButton = document.getElementById('okButton');
+        const readyButton = document.getElementById('readyButton');
+        const messageDisplay = document.getElementById('message');
+        const popup = document.getElementById('popup');
+        const popupMessage = document.getElementById('popupMessage');
+        const closePopupButton = document.getElementById('closePopupButton');
 
-        const jumpInterval = setInterval(() => {
-            if (jumpHeight >= 100) {
-                clearInterval(jumpInterval);
-                const fallInterval = setInterval(() => {
-                    if (jumpHeight <= 0) {
-                        clearInterval(fallInterval);
-                        isJumping = false;
+        let isJumping = false;
+        let score = 0;
+        let lives = 3;
+
+        function jump() {
+            if (isJumping) return;
+            isJumping = true;
+            let jumpHeight = 0;
+
+            if (navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+
+            const jumpInterval = setInterval(() => {
+                if (jumpHeight >= 100) {
+                    clearInterval(jumpInterval);
+                    const fallInterval = setInterval(() => {
+                        if (jumpHeight <= 0) {
+                            clearInterval(fallInterval);
+                            isJumping = false;
+                        }
+                        jumpHeight -= 5;
+                        dino.style.bottom = jumpHeight + 'px';
+                    }, 20);
+                }
+                jumpHeight += 5;
+                dino.style.bottom = jumpHeight + 'px';
+            }, 20);
+        }
+
+        function createCactus() {
+            const cactus = document.createElement('img');
+            cactus.classList.add('cactus');
+            cactus.src = "sagu.png";
+            cactus.style.right = '0px';
+            game.appendChild(cactus);
+
+            const cactusInterval = setInterval(() => {
+                const dinoRect = dino.getBoundingClientRect();
+                const cactusRect = cactus.getBoundingClientRect();
+
+                if (cactusRect.right < 0) {
+                    clearInterval(cactusInterval);
+                    cactus.remove();
+                    score++;
+                    scoreDisplay.textContent = 'Skor: ' + score;
+                    showMessage(score);
+                }
+
+                if (
+                    cactusRect.left < dinoRect.right &&
+                    cactusRect.right > dinoRect.left &&
+                    cactusRect.bottom < dinoRect.bottom
+                ) {
+                    lives--;
+                    livesDisplay.textContent = 'Nyawa: ' + '❤️'.repeat(lives);
+                    clearInterval(cactusInterval);
+                    cactus.remove();
+
+                    if (lives <= 0) {
+                        alert('Game Over!');
+                        document.location.reload();
                     }
-                    jumpHeight -= 5;
-                    dino.style.bottom = jumpHeight + 'px';
-                }, 20);
-            }
-            jumpHeight += 5;
-            dino.style.bottom = jumpHeight + 'px';
-        }, 20);
-    }
+                }
 
-    function createCactus() {
-        const cactus = document.createElement('img');
-        cactus.classList.add('cactus');
-        cactus.src = "sagu.png"; 
-        cactus.style.right = '0px';
-        game.appendChild(cactus);
+                cactus.style.right = (parseInt(cactus.style.right) + 5) + 'px';
+            }, 20);
+        }
 
-        const cactusInterval = setInterval(() => {
-            const dinoRect = dino.getBoundingClientRect();
-            const cactusRect = cactus.getBoundingClientRect();
-
-            if (cactusRect.right < 0) {
-                clearInterval(cactusInterval);
-                cactus.remove();
+        function showMessage(score) {
+            let message = '';
+            if (score === 20) {
+                message = "Wah awalan yg bagus pasti Lutfi suka";
+            } else if (score === 30) {
+                message = "Mantap Lutfi Sudah bersiap untuk membeli sagu";
+            } else if (score === 35) {
+                message = "Hebat Lutfi Sedang menyiapkan uang 💸 untuk sagu anda";
+            } else if (score === 50) {
+                message = "Anda Cheater kah kasian Lutfi harus membeli banyak sagu";
+            } else if (score === 100) {
+                message = "Lutfi Tidur dulu ya 100 lagi";
             }
 
-            if (
-                cactusRect.left < dinoRect.right &&
-                cactusRect.right > dinoRect.left &&
-                cactusRect.bottom < dinoRect.bottom
-            ) {
-                alert('Game Over!'); // Game Over
-                clearInterval(cactusInterval);
-                cactus.remove();
-                document.location.reload(); // Reload the game
+            if (message) {
+                messageDisplay.textContent = message;
+                messageDisplay.style.display = 'block';
+                setTimeout(() => {
+                    messageDisplay.style.display = 'none';
+                }, 3000);
             }
+        }
 
-            cactus.style.right = (parseInt(cactus.style.right) + 5) + 'px';
-        }, 20);
-    }
+        okButton.addEventListener('click', () => {
+            welcome.style.display = 'none';
+            nameInput.style.display = 'block';
+            startButton.style.display = 'block';
+        });
 
-    // Event listener untuk menyentuh dinosaurus
-    dino.addEventListener('click', jump);
+        readyButton.addEventListener('click', () => {
+            welcome.style.display = 'none';
+            nameInput.style.display = 'block';
+            startButton.style.display = 'block';
+        });
 
-    // Event listener untuk menyentuh area game
-    game.addEventListener('touchstart', jump);
+        startButton.addEventListener('click', () => {
+            const playerName = nameInput.value || 'Pemain';
+            popupMessage.textContent = `Selamat datang, ${playerName}!`;
+            popup.style.display = 'block';
+            score = 0;
+            lives = 3;
+            scoreDisplay.textContent = 'Skor: ' + score;
+            livesDisplay.textContent = 'Nyawa: ' + '❤️❤️❤️';
+            scoreDisplay.style.display = 'block';
+            livesDisplay.style.display = 'block';
+            game.style.display = 'block';
+            setInterval(createCactus, 2000);
+        });
 
-    setInterval(createCactus, 2000); // Create cactus every 2 seconds
-</script>
+        closePopupButton.addEventListener('click', () => {
+            popup.style.display = 'none';
+        });
+
+        dino.addEventListener('click', jump);
+        game.addEventListener('touchstart', jump);
+
+        setInterval(() => {
+            if (score >= 200) {
+                alert('Misi selesai! Silahkan beli sendiri sagunya di warung.');
+                document.location.reload();
+            }
+        }, 1000);
+    </script>
 
 </body>
 </html>
